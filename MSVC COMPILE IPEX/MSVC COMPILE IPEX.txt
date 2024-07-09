@@ -1,0 +1,47 @@
+1. 使用Windows MSVC进行C++编译时，可以直接在终端激活相应的工具链。编译开始前应决定使用何种工具链。
+（1）激活MSVC工具链
+命令：& 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat'
+在该目录下存在很多脚本，可以用来激活不同的编译工具链。以上选择会用x64的编译器，生成x64的程序。还有其他的bat
+脚本，可以仔细研究不同的区别。
+（2）激活MSVC 开发者命令行。（因为默认是x86环境，会造成很多bug，不推荐使用。只是记录一下使用方法。）
+命令：& 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\Launch-VsDevShell.ps1'
+在该目录下存在很多脚本，可以仔细研究。
+（3）激活Inel oneAPI工具。（在生成Intel_extension_for_pytorch的过程中必需。）
+命令：cmd.exe "/K" '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && powershell'
+注意：激活此环境，可能会包含某些lib文件，会与MSVC编译时存在的lib文件产生冲突。需要仔细甄别使用场景。
+
+2.编译使用命令。
+（1）.\compile_bundle.bat 'C:\Program Files (x86)\Intel\oneAPI\compiler\latest' 'C:\Program Files (x86)\Intel\oneAPI\mkl\latest' 'ats-m150' | Tee-Object -FilePath .\log.txt
+说明：1）.compile_bundle.bat脚本从Intel官网下载下来，但需要根据情况进行修改。该文件置于目录编译脚本\实际使用脚本中。
+      2） “|”开始及以后的命令主要用于将运行结果输出到log.txt文件之中。
+      3）对于Intel Arc脚本，命令中'ats-m150'参数主要用于AOT编译。如果没有这个参数，就不会进行AOT编译。
+（2）.\ipex_gen.bat 'C:\Program Files (x86)\Intel\oneAPI\compiler\latest' 'C:\Program Files (x86)\Intel\oneAPI\mkl\latest' 'ats-m150' | Tee-Object -FilePath .\log.txt
+说明：1）ipex_gen.bat脚本从依据compile_bundle.bat修改而来，但需要根据情况进行修改。该文件置于目录编译脚本\实际使用脚本中。
+      2） 此命令主要用于IPEX的编译生成。因为这步经常出错，因此单独使用脚本编译。
+
+3.编译过程中注意事项。
+（1）在Windows环境下，使用MSVC编译时，无论激活任何终端，一定要以管理员身份运行，这样能免掉大部分的麻烦。非常重要！！！
+（2）因为脚本运行过程中需要使用conda环境，因此需要安装miniconda。出于轻量化考虑，安装过程中要取消将其路径置于环境变量以及将其设为默认的python环境。
+如若不然，conda环境太过霸道，会影响其他的虚拟环境。激活conda环境时，使用Anaconda prompt 或 Anaconda prompt shell。这样conda环境就能和系统环境隔离开来。
+
+4.编译过程中遇到的问题。
+（1）LINK : fatal error LNK1104: 无法打开文件“msvcprt.lib”
+ 解决方法：该命令很可能因为没用管理员身份激活终端，导致权限不足，无法搜寻必要的lib文件。
+（2）error C2001: 常量中有换行符 及 fatal error C1075: “{”: 未找到匹配令牌
+ 解决方法：这个问题主要是因为编码问题产生。比如中文Windows系统，默认编码是gbk，而大多数程序基本都是用Unicode编码，因此如果
+ 未指定编码方式，在中文Windows系统中，尤其使用MSVC的情况下，非常容易产生这类报错。因此需要仔细检查相关文件中是否存在异常字符，
+ 并在文件开头，加上#pragma execution_character_set("utf-8")。编程过程尤其要注意文字编码问题。
+ (3) LINK : fatal error LNK1104: 无法打开文件“kernel32.lib”
+ 解决方法：该命令很可能因为没用管理员身份激活终端，导致权限不足，无法搜寻必要的lib文件。
+ (4) bin\torch_cpu.dll : fatal error LNK1169: 找到一个或多个多重定义的符号
+ 解决方法：此错误源于MSVC的数学库与Intel oneAPI的数学库中函数被重复定义。因为同时激活了MSVC编译环境和Intel oneAPI环境。应避免类似情况。
+（5）build\lib.win32-cpython-310\torch\_C.cp310-win_amd64.pyd : fatal error LNK1120: 1 个无法解析的外部命令
+ 解决方法：因为激活默认MSVC开发者命令行，由于此时编译器采用x86架构，导致报错。换x64编译环境即可。
+（6）llvm-foreach: no such file or directory & icx: error: gen compiler command failed with exit code 1 (use -v to see invocation)
+ 解决方法：该命令很可能因为没用管理员身份激活终端，导致权限不足，以及没有激活Intel oneAPI环境，链接失败。
+
+5.编译完成后，wheel包的使用
+（1）如果直接安装wheel包，并使用ipex功能，系统提示缺少backend_with_compiler.dll从而报错，但相应路径下的确存在该
+ dll文件。考虑可能是windows系统路径问题，导致调用oneAPI相应编译器的组件时，出现问题。因此，参考Nuullll大佬的repack_wheel.bat 
+ 脚本，直接将相关的dll都重新拷贝到torch及ipex的wheel包里，进行重新打包。发现所有的依赖问题都会迎刃而解。
+（2）解包打包wheel文件，需要pip install wheel，然后使用wheel unpack/pack命令。详情可上网搜寻具体使用方法。
