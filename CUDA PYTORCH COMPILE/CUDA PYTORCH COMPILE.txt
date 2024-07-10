@@ -1,0 +1,16 @@
+1. 编译Cuda Pytorch遇到的问题及解决方法。
+（1）LINK : fatal error LNK1102: 内存不足
+    解决办法：由于Pytorch编译过程非常占用内存，因此需要把其他程序，尤其是占用内存比较高的
+    浏览器关掉。
+（2）LINK : LLVM ERROR: out of memory & LogcumsumexpKernel.cu & nvcc error   : 'cicc' died with status 0xC0000409
+    解决办法：由于Pytorch编译过程非常占用内存，因此需要把其他程序，尤其是占用内存比较高的
+    浏览器关掉。
+（3）fatal error C1083: 无法打开包括文件: “nvToolsExt.h”: No such file or directory
+    解决办法：修改pytorch\cmake\public\cuda.cmake文件，在59行find_package(CUDAToolkit REQUIRED)
+    下面补充如下三句命令。set(MY_EXTRA_DIR "D:/Software_install/CUDA/include/nvtx3") &
+    add_library(CUDA::nvToolsExt INTERFACE IMPORTED) & set_property(TARGET CUDA::nvToolsExt APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${MY_EXTRA_DIR}")
+    其中"D:/Software_install/CUDA/include/nvtx3"路径随着安装cuda的路径不同，可能发生变化，需根据
+    实际情况进行修改。add_library(CUDA::nvToolsExt INTERFACE IMPORTED)中INTERFACE IMPORTED的含义
+    在CMAKE语法中表示CUDA::nvToolsExt是headers-only库，这句命令并不会产生lib或dll的库文件。cuda从
+    12开始就将nvToolsExt从dll改为了nvToolsExt.h。而set_property一句是为了将CUDA：：nvToolsExt
+    与本机中nvToolsExt.h所在的路径联系起来。
