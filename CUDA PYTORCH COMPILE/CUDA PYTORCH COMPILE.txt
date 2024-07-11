@@ -13,4 +13,5 @@
     实际情况进行修改。add_library(CUDA::nvToolsExt INTERFACE IMPORTED)中INTERFACE IMPORTED的含义
     在CMAKE语法中表示CUDA::nvToolsExt是headers-only库，这句命令并不会产生lib或dll的库文件。cuda从
     12开始就将nvToolsExt从dll改为了nvToolsExt.h。而set_property一句是为了将CUDA：：nvToolsExt
-    与本机中nvToolsExt.h所在的路径联系起来。
+    与本机中nvToolsExt.h所在的路径联系起来。另外需要注意，即便是在windows，绝对路径的分隔符需要用
+    ‘/’而不是‘\\’。
