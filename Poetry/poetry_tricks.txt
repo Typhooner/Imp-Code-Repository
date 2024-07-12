@@ -1,0 +1,2 @@
+1. 使用poetry在本地安装wheel包
+解决方法：利用命令poetry --editable add .\local_package.whl
