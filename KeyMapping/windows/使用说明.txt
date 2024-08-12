@@ -1,0 +1,4 @@
+EscCapslockExchange.reg 将Esc与Capslock进行对调
+EscCapslockReset.reg 将Esc与Capslock进行还原
+
+双击注册表文件以后，重启生效。
